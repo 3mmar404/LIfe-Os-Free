@@ -125,17 +125,141 @@ LifeOS.passwords = {
 
     showForm: function(item = null) {
         const isEdit = !!item;
-        const form = document.createElement('form');
-        form.innerHTML = `<fieldset><legend>تفاصيل الحساب</legend><div class="form-grid"><div class="form-group"><label class="form-label">المنصة/الموقع</label><input type="text" class="form-input" name="platform" required></div><div class="form-group"><label class="form-label">اسم المستخدم/البريد</label><input type="text" class="form-input" name="username" required></div></div><div class="form-group"><label class="form-label">كلمة المرور</label><input type="password" class="form-input" name="password" required></div><div class="form-group"><label class="form-label">التصنيفات (افصل بفاصلة)</label><input type="text" class="form-input" name="tags"></div></fieldset><div class="form-group"><button type="submit" class="btn btn-success" style="width: 100%;"><i class="fas fa-save"></i> ${isEdit ? 'تحديث الحساب' : 'حفظ الحساب'}</button></div>`;
-        if (isEdit) { form.platform.value = item.platform || ''; form.username.value = item.username || ''; form.password.value = item.password || ''; form.tags.value = (item.tags || []).join(', '); }
-        form.addEventListener('submit', async (e) => {
+        const content = document.createElement('div');
+        content.innerHTML = `
+            <form id="password-edit-form" style="display: grid; gap: 1rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">اسم الموقع/التطبيق</label>
+                    <input type="text" id="platform" class="form-input" placeholder="مثال: Gmail, Facebook" required>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">اسم المستخدم/البريد الإلكتروني</label>
+                    <input type="text" id="username" class="form-input" placeholder="مثال: user@example.com" required>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">كلمة المرور</label>
+                    <div style="position: relative;">
+                        <input type="password" id="password" class="form-input" placeholder="كلمة المرور" required style="padding-left: 3rem;">
+                        <button type="button" id="toggle-password" style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">رابط الموقع (اختياري)</label>
+                    <input type="url" id="website" class="form-input" placeholder="https://example.com">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">الفئة</label>
+                    <select id="category" class="form-input">
+                        <option value="شخصي">شخصي</option>
+                        <option value="عمل">عمل</option>
+                        <option value="اجتماعي">اجتماعي</option>
+                        <option value="مالي">مالي</option>
+                        <option value="ترفيه">ترفيه</option>
+                        <option value="تسوق">تسوق</option>
+                        <option value="أخرى">أخرى</option>
+                        <option value="تخصيص">تخصيص...</option>
+                    </select>
+                    <input type="text" id="custom-category" class="form-input" placeholder="اكتب اسم الفئة الجديدة" style="display: none; margin-top: 0.5rem;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">ملاحظات (اختياري)</label>
+                    <textarea id="notes" class="form-input" rows="3" placeholder="أي ملاحظات إضافية..."></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">
+                        <i class="fas fa-save"></i> ${isEdit ? 'تحديث' : 'حفظ'}
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="LifeOS.ui.closeModal()" style="flex: 1;">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                </div>
+            </form>
+        `;
+
+        // ملء البيانات في حالة التعديل
+        if (isEdit) {
+            content.querySelector('#platform').value = item.platform || '';
+            content.querySelector('#username').value = item.username || '';
+            content.querySelector('#password').value = item.password || '';
+            content.querySelector('#website').value = item.website || '';
+            content.querySelector('#category').value = item.category || 'شخصي';
+            content.querySelector('#notes').value = item.notes || '';
+        }
+
+        // إضافة الأحداث
+        content.querySelector('#toggle-password').onclick = function() {
+            const passwordInput = content.querySelector('#password');
+            const icon = this.querySelector('i');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        };
+
+        content.querySelector('#category').onchange = function() {
+            const customInput = content.querySelector('#custom-category');
+            if (this.value === 'تخصيص') {
+                customInput.style.display = 'block';
+                customInput.required = true;
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                customInput.required = false;
+                customInput.value = '';
+            }
+        };
+
+        content.querySelector('#password-edit-form').onsubmit = async (e) => {
             e.preventDefault();
-            const formData = new FormData(form);
-            const newItem = { id: isEdit ? item.id : LifeOS.core.generateId(), platform: formData.get('platform'), username: formData.get('username'), password: formData.get('password'), tags: formData.get('tags').split(',').map(t => t.trim()).filter(Boolean), created: isEdit ? (item.created || Date.now()) : Date.now(), updated: Date.now() };
-            if (isEdit) { const index = LifeOS.core.state.data.passwords.findIndex(p => p.id === item.id); if (index > -1) LifeOS.core.state.data.passwords[index] = newItem; } else { LifeOS.core.state.data.passwords.unshift(newItem); }
-            await LifeOS.core.saveData(); LifeOS.ui.closeModal(); LifeOS.ui.showToast(isEdit ? 'تم تحديث الحساب' : 'تم إضافة الحساب', 'success'); this.renderGrid(); LifeOS.dashboard.load();
-        });
-        LifeOS.ui.showModal(isEdit ? 'تعديل الحساب' : 'إضافة حساب جديد', form);
+            
+            // تحديد الفئة
+            let selectedCategory = content.querySelector('#category').value;
+            if (selectedCategory === 'تخصيص') {
+                selectedCategory = content.querySelector('#custom-category').value.trim();
+                if (!selectedCategory) {
+                    LifeOS.ui.showToast('يرجى كتابة اسم الفئة المخصصة', 'error');
+                    return;
+                }
+            }
+
+            const formData = {
+                id: isEdit ? item.id : LifeOS.core.generateId(),
+                platform: content.querySelector('#platform').value.trim(),
+                username: content.querySelector('#username').value.trim(),
+                password: content.querySelector('#password').value,
+                website: content.querySelector('#website').value.trim(),
+                category: selectedCategory,
+                notes: content.querySelector('#notes').value.trim(),
+                created: isEdit ? (item.created || Date.now()) : Date.now(),
+                updated: Date.now(),
+                tags: [selectedCategory]
+            };
+
+            if (!formData.platform || !formData.username || !formData.password) {
+                LifeOS.ui.showToast('يرجى ملء جميع الحقول المطلوبة', 'error');
+                return;
+            }
+
+            if (isEdit) {
+                const index = LifeOS.core.state.data.passwords.findIndex(p => p.id === item.id);
+                if (index > -1) LifeOS.core.state.data.passwords[index] = formData;
+            } else {
+                LifeOS.core.state.data.passwords.push(formData);
+            }
+
+            await LifeOS.core.saveData();
+            LifeOS.ui.closeModal();
+            LifeOS.ui.showToast(isEdit ? 'تم تحديث كلمة المرور بنجاح' : 'تم إضافة كلمة المرور بنجاح', 'success');
+            this.renderGrid();
+            LifeOS.dashboard.load();
+        };
+
+        LifeOS.ui.showModal(isEdit ? 'تعديل كلمة المرور' : 'إضافة كلمة مرور جديدة', content);
     },
     
     copyUsername: function(id) { const i = LifeOS.core.state.data.passwords.find(p=>p.id===id); if(i) navigator.clipboard.writeText(i.username).then(()=>LifeOS.ui.showToast('تم نسخ اسم المستخدم')).catch(()=>LifeOS.ui.showToast('فشل النسخ','error')); },
@@ -148,5 +272,126 @@ LifeOS.passwords = {
     handleExternalImport: function(file) { if (!file) return; const reader = new FileReader(); reader.onload = async (e) => { try { const parsedData = this.parseJSON(e.target.result); if (parsedData.length === 0) { LifeOS.ui.showToast('لم يتم العثور على بيانات صالحة في الملف', 'warning'); return; } const confirmed = await this.showImportConfirmation(parsedData); if (confirmed) { this.mergeImportedData(parsedData); await LifeOS.core.saveData(); LifeOS.ui.showToast(`تم دمج ${parsedData.length} حساب بنجاح`, 'success'); this.renderGrid(); LifeOS.dashboard.load(); } } catch (error) { console.error("External import failed:", error); LifeOS.ui.showToast('فشل في معالجة الملف', 'error'); } }; reader.readAsText(file); },
     showImportConfirmation: function(data) { return new Promise(resolve => { const content = document.createElement('div'); content.innerHTML = `<p class="mb-2">تم العثور على <strong>${data.length}</strong> حساب في الملف. هل تود إضافتها؟</p><h4 class="mb-1 mt-3">عينة:</h4><div style="background: var(--bg-color); padding: 0.8rem; border-radius: 8px; font-size: 0.9rem; max-height: 150px; overflow-y: auto;">${data.slice(0, 5).map(item => `<div><strong>${LifeOS.core.sanitize(item.platform || '')}</strong> - ${LifeOS.core.sanitize(item.username || '')}</div>`).join('')}</div><div class="flex gap-2 mt-3"><button class="btn btn-success confirm-btn" style="flex:1;"><i class="fas fa-check"></i> تأكيد الدمج</button><button class="btn btn-danger cancel-btn" style="flex:1;"><i class="fas fa-times"></i> إلغاء</button></div>`; content.querySelector('.confirm-btn').onclick = () => { LifeOS.ui.closeModal(); resolve(true); }; content.querySelector('.cancel-btn').onclick = () => { LifeOS.ui.closeModal(); resolve(false); }; LifeOS.ui.showModal('تأكيد استيراد البيانات الخارجية', content); }); },
     mergeImportedData: function(dataToMerge) { dataToMerge.forEach(item => { const newItem = { id: LifeOS.core.generateId(), platform: item.platform || item.name || 'غير معروف', username: item.username || item.login?.username || '', password: item.password || item.login?.password || '', tags: item.tags ? [...new Set([...item.tags, 'مستورد'])] : ['مستورد'], created: Date.now(), updated: Date.now() }; if (!newItem.platform || !newItem.username || !newItem.password) return; const exists = LifeOS.core.state.data.passwords.some(p => p.platform === newItem.platform && p.username === newItem.username); if (!exists) { LifeOS.core.state.data.passwords.push(newItem); } }); },
-    parseJSON: function(content) { try { const data = JSON.parse(content); if (Array.isArray(data)) return data; if (data.passwords && Array.isArray(data.passwords)) return data.passwords; if (data.items && Array.isArray(data.items)) { return data.items.filter(i => i.type === 1 && i.login).map(i => ({ platform: i.name, username: i.login.username, password: i.login.password, })); } return []; } catch { return []; } }
+    parseJSON: function(content) { try { const data = JSON.parse(content); if (Array.isArray(data)) return data; if (data.passwords && Array.isArray(data.passwords)) return data.passwords; if (data.items && Array.isArray(data.items)) { return data.items.filter(i => i.type === 1 && i.login).map(i => ({ platform: i.name, username: i.login.username, password: i.login.password, })); } return []; } catch { return []; } },
+
+    showAddForm: function() {
+        const content = document.createElement('div');
+        content.innerHTML = `
+            <form id="password-form" style="display: grid; gap: 1rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">اسم الموقع/التطبيق</label>
+                    <input type="text" id="platform" class="form-input" placeholder="مثال: Gmail, Facebook" required>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">اسم المستخدم/البريد الإلكتروني</label>
+                    <input type="text" id="username" class="form-input" placeholder="مثال: user@example.com" required>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">كلمة المرور</label>
+                    <div style="position: relative;">
+                        <input type="password" id="password" class="form-input" placeholder="كلمة المرور" required style="padding-left: 3rem;">
+                        <button type="button" id="toggle-password" style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">رابط الموقع (اختياري)</label>
+                    <input type="url" id="website" class="form-input" placeholder="https://example.com">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">الفئة</label>
+                    <select id="category" class="form-input">
+                        <option value="شخصي">شخصي</option>
+                        <option value="عمل">عمل</option>
+                        <option value="اجتماعي">اجتماعي</option>
+                        <option value="مالي">مالي</option>
+                        <option value="ترفيه">ترفيه</option>
+                        <option value="تسوق">تسوق</option>
+                        <option value="أخرى">أخرى</option>
+                        <option value="تخصيص">تخصيص...</option>
+                    </select>
+                    <input type="text" id="custom-category" class="form-input" placeholder="اكتب اسم الفئة الجديدة" style="display: none; margin-top: 0.5rem;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">ملاحظات (اختياري)</label>
+                    <textarea id="notes" class="form-input" rows="3" placeholder="أي ملاحظات إضافية..."></textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">
+                        <i class="fas fa-save"></i> حفظ
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="LifeOS.ui.closeModal()" style="flex: 1;">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                </div>
+            </form>
+        `;
+
+        // إضافة الأحداث
+        content.querySelector('#toggle-password').onclick = function() {
+            const passwordInput = content.querySelector('#password');
+            const icon = this.querySelector('i');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.className = 'fas fa-eye-slash';
+            } else {
+                passwordInput.type = 'password';
+                icon.className = 'fas fa-eye';
+            }
+        };
+
+        content.querySelector('#category').onchange = function() {
+            const customInput = content.querySelector('#custom-category');
+            if (this.value === 'تخصيص') {
+                customInput.style.display = 'block';
+                customInput.required = true;
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                customInput.required = false;
+                customInput.value = '';
+            }
+        };
+
+        content.querySelector('#password-form').onsubmit = async (e) => {
+            e.preventDefault();
+            // تحديد الفئة
+            let selectedCategory = content.querySelector('#category').value;
+            if (selectedCategory === 'تخصيص') {
+                selectedCategory = content.querySelector('#custom-category').value.trim();
+                if (!selectedCategory) {
+                    LifeOS.ui.showToast('يرجى كتابة اسم الفئة المخصصة', 'error');
+                    return;
+                }
+            }
+
+            const formData = {
+                id: LifeOS.core.generateId(),
+                platform: content.querySelector('#platform').value.trim(),
+                username: content.querySelector('#username').value.trim(),
+                password: content.querySelector('#password').value,
+                website: content.querySelector('#website').value.trim(),
+                category: selectedCategory,
+                notes: content.querySelector('#notes').value.trim(),
+                created: Date.now(),
+                updated: Date.now(),
+                tags: [selectedCategory]
+            };
+
+            if (!formData.platform || !formData.username || !formData.password) {
+                LifeOS.ui.showToast('يرجى ملء جميع الحقول المطلوبة', 'error');
+                return;
+            }
+
+            LifeOS.core.state.data.passwords.push(formData);
+            await LifeOS.core.saveData();
+            LifeOS.ui.closeModal();
+            LifeOS.ui.showToast('تم إضافة كلمة المرور بنجاح', 'success');
+            this.renderGrid();
+            LifeOS.dashboard.load();
+        };
+
+        LifeOS.ui.showModal('إضافة كلمة مرور جديدة', content);
+    }
 };

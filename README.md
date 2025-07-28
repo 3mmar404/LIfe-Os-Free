@@ -76,6 +76,26 @@ LifeOS Free is fully optimized for mobile devices:
 - **👆 Touch Optimized**: All interactions designed for touch
 - **🔍 Collapsible Filters**: Tap "Categories" to show/hide filters
 
+## 📸 Screenshots
+
+### 🏠 Home Dashboard
+![Home Screen](screenshots/home.png)
+
+### 🔐 Password Management
+![Passwords](screenshots/passwords.png)
+
+### 👥 Contact Management
+![Contacts](screenshots/contacts.png)
+
+### 🔖 Bookmark Management
+![Bookmarks](screenshots/bookmarks.png)
+
+### ⚙️ Settings & Tools
+![Settings](screenshots/settings.png)
+
+### 📖 Documentation
+![Documentation](screenshots/documentation.png)
+
 ## 🛠️ Technical Stack
 
 | Technology | Purpose |

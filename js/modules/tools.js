@@ -29,6 +29,14 @@ LifeOS.tools = {
                     </div>
                 </div>
 
+                <div class="dashboard-card">
+                    <div class="card-header"><i class="card-icon fas fa-key"></i><h3 class="card-title">تغيير كلمة المرور الرئيسية</h3></div>
+                    <p class="mb-2" style="color: var(--text-secondary);">حدث كلمة المرور الرئيسية لحسابك. ستحتاج لإدخال كلمة المرور الحالية.</p>
+                    <div class="card-actions">
+                        <button class="btn btn-warning" onclick="LifeOS.tools.changeMainPassword()"><i class="fas fa-lock"></i> تغيير كلمة المرور</button>
+                    </div>
+                </div>
+
                  <div class="dashboard-card">
                         <div class="card-header"><i class="card-icon fas fa-trash"></i><h3 class="card-title">إعادة تعيين كاملة</h3></div>
                         <p style="color: var(--text-secondary); margin-bottom: 1rem;">
@@ -101,6 +109,120 @@ LifeOS.tools = {
             }
         };
         reader.readAsText(file);
+    },
+
+    changeMainPassword: function() {
+        const content = document.createElement('div');
+        content.innerHTML = `
+            <form id="change-password-form" style="display: grid; gap: 1rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">كلمة المرور الحالية</label>
+                    <div style="position: relative;">
+                        <input type="password" id="current-password" class="form-input" placeholder="أدخل كلمة المرور الحالية" required style="padding-left: 3rem;">
+                        <button type="button" id="toggle-current" style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">كلمة المرور الجديدة</label>
+                    <div style="position: relative;">
+                        <input type="password" id="new-password" class="form-input" placeholder="أدخل كلمة المرور الجديدة" required style="padding-left: 3rem;">
+                        <button type="button" id="toggle-new" style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">تأكيد كلمة المرور الجديدة</label>
+                    <div style="position: relative;">
+                        <input type="password" id="confirm-password" class="form-input" placeholder="أعد إدخال كلمة المرور الجديدة" required style="padding-left: 3rem;">
+                        <button type="button" id="toggle-confirm" style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-secondary); cursor: pointer;">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div style="background: var(--warning-bg); border: 1px solid var(--warning-color); border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <i class="fas fa-exclamation-triangle" style="color: var(--warning-color);"></i>
+                        <strong style="color: var(--warning-color);">تحذير مهم</strong>
+                    </div>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+                        تأكد من حفظ كلمة المرور الجديدة في مكان آمن. في حالة نسيانها، لن تتمكن من الوصول لبياناتك نهائياً.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="btn btn-warning" style="flex: 1;">
+                        <i class="fas fa-key"></i> تغيير كلمة المرور
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="LifeOS.ui.closeModal()" style="flex: 1;">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                </div>
+            </form>
+        `;
+
+        // إضافة أحداث إظهار/إخفاء كلمات المرور
+        ['current', 'new', 'confirm'].forEach(type => {
+            content.querySelector(`#toggle-${type}`).onclick = function() {
+                const input = content.querySelector(`#${type}-password`);
+                const icon = this.querySelector('i');
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.className = 'fas fa-eye-slash';
+                } else {
+                    input.type = 'password';
+                    icon.className = 'fas fa-eye';
+                }
+            };
+        });
+
+        content.querySelector('#change-password-form').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const currentPassword = content.querySelector('#current-password').value;
+            const newPassword = content.querySelector('#new-password').value;
+            const confirmPassword = content.querySelector('#confirm-password').value;
+
+            // التحقق من كلمة المرور الحالية
+            if (!LifeOS.security.verifyPassword(currentPassword)) {
+                LifeOS.ui.showToast('كلمة المرور الحالية غير صحيحة', 'error');
+                return;
+            }
+
+            // التحقق من تطابق كلمة المرور الجديدة
+            if (newPassword !== confirmPassword) {
+                LifeOS.ui.showToast('كلمة المرور الجديدة غير متطابقة', 'error');
+                return;
+            }
+
+            // التحقق من قوة كلمة المرور الجديدة
+            if (newPassword.length < 6) {
+                LifeOS.ui.showToast('كلمة المرور يجب أن تكون 6 أحرف على الأقل', 'error');
+                return;
+            }
+
+            try {
+                // فك تشفير البيانات بكلمة المرور الحالية
+                const currentData = LifeOS.core.state.data;
+                
+                // تشفير البيانات بكلمة المرور الجديدة
+                LifeOS.security.masterPassword = newPassword;
+                await LifeOS.core.saveData();
+                
+                // تحديث معلومات الأمان
+                LifeOS.security.updatePasswordHash(newPassword);
+                
+                LifeOS.ui.closeModal();
+                LifeOS.ui.showToast('تم تغيير كلمة المرور بنجاح!', 'success');
+                
+            } catch (error) {
+                console.error('Password change error:', error);
+                LifeOS.ui.showToast('حدث خطأ أثناء تغيير كلمة المرور', 'error');
+            }
+        };
+
+        LifeOS.ui.showModal('تغيير كلمة المرور الرئيسية', content);
     },
 
     resetAll: function() {

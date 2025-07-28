@@ -34,7 +34,9 @@ LifeOS.core = {
             // If password exists, prompt for it.
             const password = await LifeOS.ui.promptForPassword();
             if (!password) {
-                LifeOS.ui.showFatalError("كلمة المرور مطلوبة للوصول إلى بياناتك.");
+                const isEnglish = LifeOS.core.state.data.settings.language === 'en';
+                const message = isEnglish ? "Master password is required to access your data." : "كلمة المرور مطلوبة للوصول إلى بياناتك.";
+                LifeOS.ui.showFatalError(message);
                 return;
             }
             const securityData = JSON.parse(localStorage.getItem('LifeOS_Security'));
@@ -44,7 +46,9 @@ LifeOS.core = {
                 await this.loadEncryptedData();
                 this.startApplication();
             } else {
-                LifeOS.ui.showFatalError("كلمة المرور غير صحيحة. حاول إعادة تحميل الصفحة.");
+                const isEnglish = LifeOS.core.state.data.settings.language === 'en';
+                const message = isEnglish ? "Incorrect password. Try refreshing the page." : "كلمة المرور غير صحيحة. حاول إعادة تحميل الصفحة.";
+                LifeOS.ui.showFatalError(message);
             }
         } else {
             // No password set, check if there's old unencrypted data to migrate

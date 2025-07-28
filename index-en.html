@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeOS Free - Digital Life Management System</title>
+    <meta name="description" content="Secure offline password manager, contacts, and bookmarks - Simple, secure, and open source">
+    <meta name="keywords" content="password manager, contacts, bookmarks, offline, secure, open source, privacy">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="app-logo" onclick="LifeOS.router.navigate('dashboard')">
+                    <i class="fas fa-brain"></i>
+                    <span>LifeOS Free</span>
+                </div>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="themeToggle" title="Toggle Theme">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="lang-toggle" onclick="window.location.href='index.html'" title="العربية">
+                        <i class="fas fa-language"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="main-nav">
+            <div class="nav-container">
+                <div class="nav-tabs">
+                    <button class="nav-tab active" data-module="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        Dashboard
+                    </button>
+                    <button class="nav-tab" data-module="passwords">
+                        <i class="fas fa-key"></i>
+                        Passwords
+                    </button>
+                    <button class="nav-tab" data-module="contacts">
+                        <i class="fas fa-address-book"></i>
+                        Contacts
+                    </button>
+                    <button class="nav-tab" data-module="bookmarks">
+                        <i class="fas fa-bookmark"></i>
+                        Bookmarks
+                    </button>
+                    <button class="nav-tab" data-module="tools">
+                        <i class="fas fa-tools"></i>
+                        Tools
+                    </button>
+                    <button class="nav-tab" data-module="about">
+                        <i class="fas fa-info-circle"></i>
+                        About
+                    </button>
+                    <button class="nav-tab" data-module="documentation">
+                        <i class="fas fa-book"></i>
+                        Documentation
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Dashboard Module -->
+            <div id="dashboard" class="module active">
+                <!-- Content will be loaded by JS -->
+            </div>
+
+            <!-- Passwords Module -->
+            <div id="passwords" class="module">
+                <!-- Content will be loaded by JS -->
+            </div>
+
+            <!-- Contacts Module -->
+            <div id="contacts" class="module">
+                <!-- Content will be loaded by JS -->
+            </div>
+
+            <!-- Bookmarks Module -->
+            <div id="bookmarks" class="module">
+                <!-- Content will be loaded by JS -->
+            </div>
+
+            <!-- Tools Module -->
+            <div id="tools" class="module">
+                <!-- Content will be loaded by JS -->
+            </div>
+
+            <!-- About Module -->
+            <div id="about" class="module">
+                <!-- Content will be loaded by JS -->
+            </div>
+
+            <!-- Documentation Module -->
+            <div id="documentation" class="module">
+                <!-- Content will be loaded by JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Overlay -->
+    <div id="overlay" class="overlay"></div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"></h2>
+                <button class="modal-close" onclick="LifeOS.ui.closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">
+        <div class="toast-message"></div>
+    </div>
+
+    <!-- Set Language Before Core -->
+    <script>
+        // Initialize LifeOS namespace early
+        if (!window.LifeOS) { window.LifeOS = {}; }
+        if (!LifeOS.core) { LifeOS.core = { state: { data: { settings: { language: 'en' } } } }; }
+        else if (!LifeOS.core.state) { LifeOS.core.state = { data: { settings: { language: 'en' } } }; }
+        else if (!LifeOS.core.state.data) { LifeOS.core.state.data = { settings: { language: 'en' } }; }
+        else if (!LifeOS.core.state.data.settings) { LifeOS.core.state.data.settings = { language: 'en' }; }
+        else { LifeOS.core.state.data.settings.language = 'en'; }
+    </script>
+    
+    <!-- Core Scripts -->
+    <script src="js/core.js"></script>
+    <script src="js/security.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/router.js"></script>
+    
+    <!-- Module Scripts -->
+    <script src="js/modules/dashboard-en.js"></script>
+    <script src="js/modules/passwords-en.js"></script>
+    <script src="js/modules/contacts-en.js"></script>
+    <script src="js/modules/bookmarks-en.js"></script>
+    <script src="js/modules/tools-en.js"></script>
+    <script src="js/modules/about-en.js"></script>
+    
+    <!-- Initialize Application -->
+    <script>
+        // Initialize English modules and set language
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set language to English first
+            if (LifeOS.core && LifeOS.core.state && LifeOS.core.state.data) {
+                LifeOS.core.state.data.settings.language = 'en';
+            }
+            
+            // Override modules with English versions
+            if (typeof LifeOS.dashboardEn !== 'undefined') LifeOS.dashboard = LifeOS.dashboardEn;
+            if (typeof LifeOS.passwordsEn !== 'undefined') LifeOS.passwords = LifeOS.passwordsEn;
+            if (typeof LifeOS.contactsEn !== 'undefined') LifeOS.contacts = LifeOS.contactsEn;
+            if (typeof LifeOS.bookmarksEn !== 'undefined') LifeOS.bookmarks = LifeOS.bookmarksEn;
+            if (typeof LifeOS.toolsEn !== 'undefined') LifeOS.tools = LifeOS.toolsEn;
+            if (typeof LifeOS.aboutEn !== 'undefined') LifeOS.about = LifeOS.aboutEn;
+            if (typeof LifeOS.documentationEn !== 'undefined') LifeOS.documentation = LifeOS.documentationEn;
+            
+            // Initialize application
+            LifeOS.core.init();
+        });
+    </script>
+</body>
+</html>

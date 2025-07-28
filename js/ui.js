@@ -60,20 +60,32 @@ LifeOS.ui = {
         LifeOS.core.state.data.settings.theme = (currentTheme === 'dark' ? 'light' : 'dark');
         this.applyTheme();
         LifeOS.core.saveSettings();
-        this.showToast(`تم التبديل إلى الثيم ${currentTheme === 'dark' ? 'الفاتح' : 'المظلم'}`, 'success');
+        const isEnglish = LifeOS.core.state.data.settings.language === 'en';
+        const message = isEnglish 
+            ? `Switched to ${currentTheme === 'dark' ? 'light' : 'dark'} theme`
+            : `تم التبديل إلى الثيم ${currentTheme === 'dark' ? 'الفاتح' : 'المظلم'}`;
+        this.showToast(message, 'success');
     },
 
     promptForPassword: function() {
         return new Promise(resolve => {
             const form = document.createElement('form');
-            form.innerHTML = `<p class="mb-2 text-secondary">أدخل كلمة المرور الرئيسية لفك تشفير بياناتك.</p><div class="form-group"><label class="form-label">كلمة المرور الرئيسية</label><input type="password" class="form-input" id="auth-password" required></div><button type="submit" class="btn btn-success" style="width: 100%;"><i class="fas fa-unlock-alt"></i> فتح الخزنة</button>`;
+            const isEnglish = LifeOS.core.state.data.settings.language === 'en';
+            
+            const formContent = isEnglish 
+                ? `<p class="mb-2 text-secondary">Enter your master password to decrypt your data.</p><div class="form-group"><label class="form-label">Master Password</label><input type="password" class="form-input" id="auth-password" required></div><button type="submit" class="btn btn-success" style="width: 100%;"><i class="fas fa-unlock-alt"></i> Unlock Vault</button>`
+                : `<p class="mb-2 text-secondary">أدخل كلمة المرور الرئيسية لفك تشفير بياناتك.</p><div class="form-group"><label class="form-label">كلمة المرور الرئيسية</label><input type="password" class="form-input" id="auth-password" required></div><button type="submit" class="btn btn-success" style="width: 100%;"><i class="fas fa-unlock-alt"></i> فتح الخزنة</button>`;
+            
+            form.innerHTML = formContent;
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const password = document.getElementById('auth-password').value;
                 this.closeModal();
                 resolve(password);
             });
-            this.showModal('التحقق من الهوية', form);
+            
+            const title = isEnglish ? 'Authentication' : 'التحقق من الهوية';
+            this.showModal(title, form);
             document.getElementById('auth-password').focus();
         });
     },
@@ -81,23 +93,45 @@ LifeOS.ui = {
     promptForNewPassword: function() {
         return new Promise(resolve => {
             const form = document.createElement('form');
-            form.innerHTML = `<p class="mb-2 text-secondary">مرحباً بك في LifeOS. يرجى تعيين كلمة مرور رئيسية قوية لتشفير وحماية بياناتك.</p><div class="form-group"><label class="form-label">كلمة المرور الرئيسية الجديدة</label><input type="password" class="form-input" id="new-master-password" required minlength="8"></div><div class="form-group"><label class="form-label">تأكيد كلمة المرور</label><input type="password" class="form-input" id="confirm-master-password" required></div><button type="submit" class="btn btn-success" style="width: 100%;"><i class="fas fa-shield-halved"></i> تعيين وتشفير</button>`;
+            const isEnglish = LifeOS.core.state.data.settings.language === 'en';
+            
+            const formContent = isEnglish 
+                ? `<p class="mb-2 text-secondary">Welcome to LifeOS. Please set a strong master password to encrypt and protect your data.</p><div class="form-group"><label class="form-label">New Master Password</label><input type="password" class="form-input" id="new-master-password" required minlength="8"></div><div class="form-group"><label class="form-label">Confirm Password</label><input type="password" class="form-input" id="confirm-master-password" required></div><button type="submit" class="btn btn-success" style="width: 100%;"><i class="fas fa-shield-halved"></i> Set & Encrypt</button>`
+                : `<p class="mb-2 text-secondary">مرحباً بك في LifeOS. يرجى تعيين كلمة مرور رئيسية قوية لتشفير وحماية بياناتك.</p><div class="form-group"><label class="form-label">كلمة المرور الرئيسية الجديدة</label><input type="password" class="form-input" id="new-master-password" required minlength="8"></div><div class="form-group"><label class="form-label">تأكيد كلمة المرور</label><input type="password" class="form-input" id="confirm-master-password" required></div><button type="submit" class="btn btn-success" style="width: 100%;"><i class="fas fa-shield-halved"></i> تعيين وتشفير</button>`;
+            
+            form.innerHTML = formContent;
             form.addEventListener('submit', (e) => {
                 e.preventDefault();
                 const newPass = document.getElementById('new-master-password').value;
                 const confirmPass = document.getElementById('confirm-master-password').value;
-                if (newPass.length < 8) { this.showToast("كلمة المرور يجب أن تكون 8 أحرف على الأقل", "error"); return; }
-                if (newPass !== confirmPass) { this.showToast("كلمات المرور غير متطابقة", "error"); return; }
+                
+                const errorMsg1 = isEnglish ? "Password must be at least 8 characters long" : "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
+                const errorMsg2 = isEnglish ? "Passwords do not match" : "كلمات المرور غير متطابقة";
+                
+                if (newPass.length < 8) { this.showToast(errorMsg1, "error"); return; }
+                if (newPass !== confirmPass) { this.showToast(errorMsg2, "error"); return; }
                 this.closeModal();
                 resolve(newPass);
             });
-            this.showModal('إعداد الحصن الرقمي', form);
+            
+            const title = isEnglish ? 'Setup Digital Vault' : 'إعداد الحصن الرقمي';
+            this.showModal(title, form);
             document.getElementById('new-master-password').focus();
         });
     },
 
     showFatalError: function(message) {
-        document.body.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100vh; flex-direction:column; padding: 2rem; text-align:center; background-color: var(--bg-color); color: var(--text-primary);"><i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: var(--danger-color); margin-bottom: 1rem;"></i><h1 style="color: var(--danger-color);">خطأ فادح</h1><p style="font-size: 1.2rem; margin-top: 1rem;">${message}</p></div>`;
+        const isEnglish = LifeOS.core.state.data.settings.language === 'en';
+        const title = isEnglish ? 'Fatal Error' : 'خطأ فادح';
+        document.body.innerHTML = `<div style="display:flex; align-items:center; justify-content:center; height:100vh; flex-direction:column; padding: 2rem; text-align:center; background-color: var(--bg-color); color: var(--text-primary);"><i class="fas fa-exclamation-triangle" style="font-size: 4rem; color: var(--danger-color); margin-bottom: 1rem;"></i><h1 style="color: var(--danger-color);">${title}</h1><p style="font-size: 1.2rem; margin-top: 1rem;">${message}</p></div>`;
+    },
+
+    showNotification: function(message, type = 'info') {
+        this.showToast(message, type);
+    },
+
+    hideModal: function() {
+        this.closeModal();
     }
 };
 

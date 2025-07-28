@@ -58,9 +58,7 @@ LifeOS.dashboard = {
                         <p class="text-center" style="color: var(--text-secondary);"><i class="fas fa-info-circle"></i> لا توجد أنشطة حديثة</p>
                     </div>
                 </div>
-                <div class="dashboard-card" style="display: flex; align-items: center; justify-content: center; padding: 1rem;">
-                    <img src="assests/poster.webp" alt="LifeOS Free" style="max-width: 100%; height: auto; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3);">
-                </div>
+
             </div>
         `;
     },

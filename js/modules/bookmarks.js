@@ -106,5 +106,126 @@ LifeOS.bookmarks = {
     showImportConfirmation: function(data) { return new Promise(resolve => { const content = document.createElement('div'); content.innerHTML = `<p class="mb-2">تم العثور على <strong>${data.length}</strong> رابط في الملف. هل تود إضافتها؟</p><h4 class="mb-1 mt-3">عينة:</h4><div style="background: var(--bg-color); padding: 0.8rem; border-radius: 8px; font-size: 0.9rem; max-height: 150px; overflow-y: auto; text-align:left; direction: ltr;">${data.slice(0, 5).map(item => `<div><strong>${LifeOS.core.sanitize(item.title)}</strong></div>`).join('')}</div><div class="flex gap-2 mt-3"><button class="btn btn-success confirm-btn" style="flex:1;"><i class="fas fa-check"></i> تأكيد الدمج</button><button class="btn btn-danger cancel-btn" style="flex:1;"><i class="fas fa-times"></i> إلغاء</button></div>`; content.querySelector('.confirm-btn').onclick = () => { LifeOS.ui.closeModal(); resolve(true); }; content.querySelector('.cancel-btn').onclick = () => { LifeOS.ui.closeModal(); resolve(false); }; LifeOS.ui.showModal('تأكيد استيراد البيانات الخارجية', content); }); },
     mergeImportedData: function(dataToMerge) { dataToMerge.forEach(item => { if (!item.title || !item.url) return; const newItem = { id: LifeOS.core.generateId(), title: item.title, url: item.url, categories: item.categories ? [...new Set([...item.categories, 'مستورد'])] : ['مستورد'], created: Date.now(), updated: Date.now() }; const exists = LifeOS.core.state.data.bookmarks.some(b => b.url === newItem.url); if (!exists) { LifeOS.core.state.data.bookmarks.push(newItem); } }); },
     parseJSON: function(content) { try { const data = JSON.parse(content); if (Array.isArray(data)) return data; if (data.bookmarks && Array.isArray(data.bookmarks)) return data.bookmarks; return []; } catch { return []; } },
-    parseHTML: function(html) { const bookmarks = []; const parser = new DOMParser(); const doc = parser.parseFromString(html, 'text/html'); const links = doc.querySelectorAll('a[href]'); links.forEach(link => { const title = link.textContent.trim(); const url = link.getAttribute('href'); if (title && url && url.startsWith('http')) { bookmarks.push({ title, url }); } }); return bookmarks; }
+    parseHTML: function(html) { const bookmarks = []; const parser = new DOMParser(); const doc = parser.parseFromString(html, 'text/html'); const links = doc.querySelectorAll('a[href]'); links.forEach(link => { const title = link.textContent.trim(); const url = link.getAttribute('href'); if (title && url && url.startsWith('http')) { bookmarks.push({ title, url }); } }); return bookmarks; },
+
+    showAddForm: function() {
+        const content = document.createElement('div');
+        content.innerHTML = `
+            <form id="bookmark-form" style="display: grid; gap: 1rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">عنوان الموقع</label>
+                    <input type="text" id="title" class="form-input" placeholder="مثال: جوجل، يوتيوب" required>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">رابط الموقع</label>
+                    <input type="url" id="url" class="form-input" placeholder="https://example.com" required>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">الوصف (اختياري)</label>
+                    <textarea id="description" class="form-input" rows="2" placeholder="وصف مختصر للموقع..."></textarea>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">الفئة</label>
+                    <select id="category" class="form-input">
+                        <option value="عام">عام</option>
+                        <option value="بحث">بحث</option>
+                        <option value="ترفيه">ترفيه</option>
+                        <option value="اجتماعي">اجتماعي</option>
+                        <option value="تسوق">تسوق</option>
+                        <option value="تعليم">تعليم</option>
+                        <option value="عمل">عمل</option>
+                        <option value="برمجة">برمجة</option>
+                        <option value="أخبار">أخبار</option>
+                        <option value="أخرى">أخرى</option>
+                        <option value="تخصيص">تخصيص...</option>
+                    </select>
+                    <input type="text" id="custom-category" class="form-input" placeholder="اكتب اسم الفئة الجديدة" style="display: none; margin-top: 0.5rem;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+                        <input type="checkbox" id="isFavorite" style="margin-left: 0.5rem;">
+                        إضافة إلى المفضلة
+                    </label>
+                </div>
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" class="btn btn-success" style="flex: 1;">
+                        <i class="fas fa-save"></i> حفظ
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="LifeOS.ui.closeModal()" style="flex: 1;">
+                        <i class="fas fa-times"></i> إلغاء
+                    </button>
+                </div>
+            </form>
+        `;
+
+        // إضافة حدث للفئة المخصصة
+        content.querySelector('#category').onchange = function() {
+            const customInput = content.querySelector('#custom-category');
+            if (this.value === 'تخصيص') {
+                customInput.style.display = 'block';
+                customInput.required = true;
+                customInput.focus();
+            } else {
+                customInput.style.display = 'none';
+                customInput.required = false;
+                customInput.value = '';
+            }
+        };
+
+        content.querySelector('#bookmark-form').onsubmit = async (e) => {
+            e.preventDefault();
+            // تحديد الفئة
+            let selectedCategory = content.querySelector('#category').value;
+            if (selectedCategory === 'تخصيص') {
+                selectedCategory = content.querySelector('#custom-category').value.trim();
+                if (!selectedCategory) {
+                    LifeOS.ui.showToast('يرجى كتابة اسم الفئة المخصصة', 'error');
+                    return;
+                }
+            }
+
+            const formData = {
+                id: LifeOS.core.generateId(),
+                title: content.querySelector('#title').value.trim(),
+                url: content.querySelector('#url').value.trim(),
+                description: content.querySelector('#description').value.trim(),
+                category: selectedCategory,
+                isFavorite: content.querySelector('#isFavorite').checked,
+                created: Date.now(),
+                updated: Date.now(),
+                categories: [selectedCategory],
+                visitCount: 0,
+                lastVisited: null
+            };
+
+            if (!formData.title || !formData.url) {
+                LifeOS.ui.showToast('يرجى ملء العنوان والرابط', 'error');
+                return;
+            }
+
+            // التحقق من صحة الرابط
+            try {
+                new URL(formData.url);
+            } catch {
+                LifeOS.ui.showToast('يرجى إدخال رابط صحيح', 'error');
+                return;
+            }
+
+            // التحقق من عدم وجود الرابط مسبقاً
+            const exists = LifeOS.core.state.data.bookmarks.some(b => b.url === formData.url);
+            if (exists) {
+                LifeOS.ui.showToast('هذا الرابط موجود بالفعل', 'warning');
+                return;
+            }
+
+            LifeOS.core.state.data.bookmarks.push(formData);
+            await LifeOS.core.saveData();
+            LifeOS.ui.closeModal();
+            LifeOS.ui.showToast('تم إضافة الرابط بنجاح', 'success');
+            this.renderGrid();
+            LifeOS.dashboard.load();
+        };
+
+        LifeOS.ui.showModal('إضافة رابط جديد', content);
+    }
 };
