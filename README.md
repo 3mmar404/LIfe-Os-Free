@@ -194,8 +194,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 ## 📞 Support & Contact
 
-- **🐛 Bug Reports**: [GitHub Issues](https://github.com/yourusername/lifeos-free/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/yourusername/lifeos-free/discussions)
+- **🐛 Bug Reports**: [GitHub Issues](https://github.com/3mmar404/lifeos-free/issues)
+- **💬 Discussions**: [GitHub Discussions](https://github.com/3mmar404/lifeos-free/discussions)
 - **📧 Email**: Contact information will be available soon
 - **📖 Documentation**: Built-in help system available in the app
 
