@@ -1,4 +1,4 @@
-// LifeOS Free - Passwords Module (English) v2.0
+// LifeOS - Passwords Module v3.0 (English)
 if (!LifeOS) { var LifeOS = {}; }
 
 LifeOS.passwordsEn = {
@@ -6,312 +6,183 @@ LifeOS.passwordsEn = {
     searchQuery: '',
 
     load: function() {
-        const container = document.getElementById('passwords');
-        container.innerHTML = `
-            <div class="passwords-container">
-                <div class="module-header">
-                    <div class="header-content">
-                        <h2 class="module-title">
-                            <i class="fas fa-key"></i>
-                            Password Manager
-                        </h2>
-                        <button class="btn-primary add-password-btn" onclick="LifeOS.passwordsEn.showAddForm()">
-                            <i class="fas fa-plus"></i>
-                            Add Password
-                        </button>
-                    </div>
-                </div>
-
-                <div class="module-controls">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" id="passwordSearch" placeholder="Search passwords..." 
-                               oninput="LifeOS.passwordsEn.handleSearch(this.value)">
-                    </div>
-                    
-                    <div class="filter-tabs">
-                        <button class="filter-tab active" data-filter="all" onclick="LifeOS.passwordsEn.setFilter('all')">
-                            <i class="fas fa-list"></i>
-                            All
-                        </button>
-                        <button class="filter-tab" data-filter="personal" onclick="LifeOS.passwordsEn.setFilter('personal')">
-                            <i class="fas fa-user"></i>
-                            Personal
-                        </button>
-                        <button class="filter-tab" data-filter="work" onclick="LifeOS.passwordsEn.setFilter('work')">
-                            <i class="fas fa-briefcase"></i>
-                            Work
-                        </button>
-                        <button class="filter-tab" data-filter="banking" onclick="LifeOS.passwordsEn.setFilter('banking')">
-                            <i class="fas fa-university"></i>
-                            Banking
-                        </button>
-                        <button class="filter-tab" data-filter="social" onclick="LifeOS.passwordsEn.setFilter('social')">
-                            <i class="fas fa-share-alt"></i>
-                            Social
-                        </button>
-                    </div>
-                </div>
-
-                <div class="passwords-list" id="passwordsList">
-                    ${this.renderPasswordsList()}
-                </div>
-            </div>
-        `;
-        
-        this.attachEventListeners();
+        this.renderLayout();
+        this.renderGrid();
     },
 
-    renderPasswordsList: function() {
-        const passwords = LifeOS.core.state.data.passwords || [];
-        
-        if (passwords.length === 0) {
-            return `
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        <i class="fas fa-key"></i>
-                    </div>
-                    <h3>No passwords saved yet</h3>
-                    <p>Add your first password to get started with secure management</p>
-                    <button class="btn-primary" onclick="LifeOS.passwordsEn.showAddForm()">
-                        <i class="fas fa-plus"></i>
-                        Add First Password
-                    </button>
-                </div>
-            `;
-        }
+    renderLayout: function() {
+        const container = document.getElementById('passwords');
+        if (container.childElementCount > 0 && container.querySelector('.filter-tags-container')) return;
 
-        let filteredPasswords = passwords;
-        
-        // Apply category filter
-        if (this.currentFilter !== 'all') {
-            filteredPasswords = passwords.filter(p => p.category === this.currentFilter);
+        container.innerHTML = `
+            <div class="search-filters">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" id="passwords-search" class="search-input" placeholder="Search accounts...">
+                </div>
+                <button class="btn btn-success"><i class="fas fa-plus"></i> Add Account</button>
+                <button class="btn btn-secondary import-btn"><i class="fas fa-upload"></i> Import JSON</button>
+                <input type="file" class="import-input" accept=".json" style="display:none">
+            </div>
+            <div class="filters-wrapper">
+                <div class="filters-header" onclick="toggleFilters()">
+                    <h4><i class="fas fa-filter"></i> Categories</h4>
+                    <button class="filters-toggle"><i class="fas fa-chevron-down"></i></button>
+                </div>
+                <div class="filters-content expanded">
+                    <div id="passwords-filters" class="filter-tags-container"></div>
+                </div>
+            </div>
+            <div id="passwords-grid" class="cards-grid"></div>
+            <div id="passwords-empty" style="display:none; text-align:center;">
+                <i class="fas fa-key" style="font-size:3rem;color:var(--text-muted);margin-bottom:1rem;"></i>
+                <p style="color:var(--text-secondary);">No accounts found. Start by adding a new account.</p>
+            </div>`;
+
+        container.querySelector('.btn-success').onclick = () => this.showAddForm();
+        container.querySelector('.import-btn').onclick = () => container.querySelector('.import-input').click();
+        container.querySelector('.import-input').onchange = (e) => {this.handleExternalImport(e.target.files[0]); e.target.value = null;};
+        container.querySelector('#passwords-search').oninput = LifeOS.core.debounce((e) => { this.searchQuery = e.target.value; this.renderGrid();}, 300);
+    },
+
+    renderGrid: function() {
+        const grid = document.getElementById('passwords-grid');
+        const emptyMsg = document.getElementById('passwords-empty');
+        grid.innerHTML = '';
+        const data = this.getFilteredData();
+        if (data.length === 0) {
+            grid.style.display = 'none';
+            emptyMsg.style.display = 'block';
+        } else {
+            grid.style.display = 'grid';
+            emptyMsg.style.display = 'none';
+            data.forEach(item => { grid.appendChild(this.createCard(item)); });
         }
-        
-        // Apply search filter
-        if (this.searchQuery) {
-            const query = this.searchQuery.toLowerCase();
-            filteredPasswords = filteredPasswords.filter(p => 
-                p.title.toLowerCase().includes(query) ||
-                p.username.toLowerCase().includes(query) ||
-                p.url.toLowerCase().includes(query)
+        this.updateFilters();
+    },
+
+    getFilteredData: function() {
+        let data = LifeOS.core.state.data.passwords;
+        const query = this.searchQuery.toLowerCase();
+        if (query) {
+            data = data.filter(item =>
+                item.platform?.toLowerCase().includes(query) ||
+                item.username?.toLowerCase().includes(query) ||
+                (item.tags || []).some(tag => tag.toLowerCase().includes(query))
             );
         }
-
-        if (filteredPasswords.length === 0) {
-            return `
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        <i class="fas fa-search"></i>
-                    </div>
-                    <h3>No passwords found</h3>
-                    <p>Try adjusting your search or filter criteria</p>
-                </div>
-            `;
+        if (this.currentFilter !== 'all') {
+            data = data.filter(item => (item.tags || []).includes(this.currentFilter));
         }
-
-        return filteredPasswords.map(password => `
-            <div class="data-card password-card" data-id="${password.id}">
-                <div class="card-header">
-                    <div class="card-icon ${password.category}">
-                        <i class="fas ${this.getCategoryIcon(password.category)}"></i>
-                    </div>
-                    <div class="card-info">
-                        <h3 class="card-title">${password.title}</h3>
-                        <p class="card-subtitle">${password.username}</p>
-                        ${password.url ? `<p class="card-url">${password.url}</p>` : ''}
-                    </div>
-                    <div class="card-actions">
-                        <button class="btn-icon" onclick="LifeOS.passwordsEn.copyUsername('${password.id}')" title="Copy Username">
-                            <i class="fas fa-user"></i>
-                        </button>
-                        <button class="btn-icon" onclick="LifeOS.passwordsEn.copyPassword('${password.id}')" title="Copy Password">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                        <button class="btn-icon" onclick="LifeOS.passwordsEn.togglePassword('${password.id}')" title="Show/Hide Password">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn-icon edit-btn" onclick="LifeOS.passwordsEn.editPassword('${password.id}')" title="Edit">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn-icon delete-btn" onclick="LifeOS.passwordsEn.deletePassword('${password.id}')" title="Delete">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="password-details" id="password-${password.id}" style="display: none;">
-                    <div class="detail-row">
-                        <span class="detail-label">Password:</span>
-                        <span class="detail-value password-value">••••••••</span>
-                    </div>
-                    ${password.notes ? `<div class="detail-row"><span class="detail-label">Notes:</span><span class="detail-value">${password.notes}</span></div>` : ''}
-                </div>
-            </div>
-        `).join('');
+        return data.sort((a,b) => a.platform.localeCompare(b.platform));
     },
 
-    getCategoryIcon: function(category) {
-        const icons = {
-            'personal': 'fa-user',
-            'work': 'fa-briefcase',
-            'banking': 'fa-university',
-            'social': 'fa-share-alt',
-            'other': 'fa-globe'
-        };
-        return icons[category] || 'fa-globe';
+    createCard: function(item) {
+        const card = document.createElement('div');
+        card.className = 'data-card';
+        card.innerHTML = `
+            <div class="card-content">
+                <div class="card-header">
+                    <i class="fas fa-shield-alt card-icon"></i>
+                    <div>
+                        <h3 class="card-title">${LifeOS.core.sanitize(item.platform || '')}</h3>
+                        <span style="font-size:0.9rem; color:var(--text-secondary); direction:ltr; text-align:left; display:block;">${LifeOS.core.sanitize(item.username || '')}</span>
+                    </div>
+                </div>
+                <div class="password-field" style="background:var(--secondary-color); padding:0.8rem; border-radius:6px; display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <span class="password-span" style="font-family:monospace; user-select:none; color: var(--text-primary);">••••••••••</span>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button title="Show/Hide" class="btn btn-small btn-secondary toggle-vis-btn"><i class="fas fa-eye"></i></button>
+                        <button title="Copy Password" class="btn btn-small btn-secondary copy-pass-btn"><i class="fas fa-copy"></i></button>
+                    </div>
+                </div>
+                <div class="tags-container" style="display:flex;gap:0.5rem;flex-wrap:wrap; margin-top:auto;"></div>
+            </div>
+            <div class="card-actions"></div>`;
+
+        const tagsContainer = card.querySelector('.tags-container');
+        (item.tags || []).forEach(tag => {
+            const tagEl = document.createElement('span');
+            tagEl.className = 'filter-tag';
+            tagEl.textContent = tag;
+            tagsContainer.appendChild(tagEl);
+        });
+        
+        card.querySelector('.toggle-vis-btn').onclick = () => this.togglePassword(item.id, card.querySelector('.password-span'), card.querySelector('.toggle-vis-btn i'));
+        card.querySelector('.copy-pass-btn').onclick = () => this.copyPassword(item.id);
+        
+        const actionsContainer = card.querySelector('.card-actions');
+        [{icon:'fa-user-tag', title:'Copy Username', action:()=>this.copyUsername(item.id)}, {icon:'fa-edit', title:'Edit', action:()=>this.showForm(item)}, {icon:'fa-trash', title:'Delete', action:()=>this.delete(item.id), danger:true}].forEach(b => {
+            const btn = document.createElement('button');
+            btn.className = `btn btn-small ${b.danger ? 'btn-danger' : 'btn-secondary'}`;
+            btn.title = b.title;
+            btn.innerHTML = `<i class="fas ${b.icon}"></i> ${b.title}`;
+            btn.onclick = b.action;
+            actionsContainer.appendChild(btn);
+        });
+        
+        return card;
+    },
+
+    updateFilters: function() {
+        const container = document.getElementById('passwords-filters');
+        const allTags = [...new Set(LifeOS.core.state.data.passwords.flatMap(p => p.tags || []))];
+        
+        container.innerHTML = `
+            <button class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" onclick="LifeOS.passwordsEn.setFilter('all')">
+                <i class="fas fa-list"></i> All (${LifeOS.core.state.data.passwords.length})
+            </button>
+            ${allTags.map(tag => `
+                <button class="filter-tag ${this.currentFilter === tag ? 'active' : ''}" onclick="LifeOS.passwordsEn.setFilter('${tag}')">
+                    ${tag} (${LifeOS.core.state.data.passwords.filter(p => (p.tags || []).includes(tag)).length})
+                </button>
+            `).join('')}
+        `;
     },
 
     setFilter: function(filter) {
         this.currentFilter = filter;
-        
-        // Update active filter tab
-        document.querySelectorAll('.filter-tab').forEach(tab => {
-            tab.classList.remove('active');
-        });
-        document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
-        
-        // Re-render list
-        document.getElementById('passwordsList').innerHTML = this.renderPasswordsList();
-    },
-
-    handleSearch: function(query) {
-        this.searchQuery = query;
-        document.getElementById('passwordsList').innerHTML = this.renderPasswordsList();
+        this.renderGrid();
     },
 
     showAddForm: function() {
-        const formHtml = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3><i class="fas fa-plus"></i> Add New Password</h3>
-                    <button class="modal-close" onclick="LifeOS.ui.hideModal()">&times;</button>
+        const form = `
+            <div class="form-group">
+                <label class="form-label">Platform/Service Name</label>
+                <input type="text" id="add-platform" class="form-input" placeholder="e.g., Gmail, Facebook, GitHub">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" id="add-username" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email (optional)</label>
+                <input type="email" id="add-email" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <div class="password-input">
+                    <input type="password" id="add-password" class="form-input">
+                    <button type="button" class="btn btn-secondary" onclick="LifeOS.passwordsEn.generatePassword()">
+                        <i class="fas fa-magic"></i> Generate
+                    </button>
                 </div>
-                <form id="addPasswordForm" onsubmit="LifeOS.passwordsEn.handleAddPassword(event)">
-                    <div class="form-group">
-                        <label for="passwordTitle">Title *</label>
-                        <input type="text" id="passwordTitle" required placeholder="e.g., Gmail Account">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="passwordUsername">Username/Email *</label>
-                        <input type="text" id="passwordUsername" required placeholder="username or email">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="passwordPassword">Password *</label>
-                        <div class="password-input-group">
-                            <input type="password" id="passwordPassword" required placeholder="Enter password">
-                            <button type="button" class="btn-icon" onclick="LifeOS.passwordsEn.toggleAddPasswordVisibility()">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button type="button" class="btn-icon" onclick="LifeOS.passwordsEn.generatePassword()" title="Generate Password">
-                                <i class="fas fa-random"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="passwordUrl">Website URL</label>
-                        <input type="url" id="passwordUrl" placeholder="https://example.com">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="passwordCategory">Category</label>
-                        <select id="passwordCategory">
-                            <option value="personal">Personal</option>
-                            <option value="work">Work</option>
-                            <option value="banking">Banking</option>
-                            <option value="social">Social</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="passwordNotes">Notes</label>
-                        <textarea id="passwordNotes" placeholder="Additional notes (optional)"></textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary" onclick="LifeOS.ui.hideModal()">Cancel</button>
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-save"></i>
-                            Save Password
-                        </button>
-                    </div>
-                </form>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tags (optional)</label>
+                <input type="text" id="add-tags" class="form-input" placeholder="work, personal, social (comma separated)">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes (optional)</label>
+                <textarea id="add-notes" class="form-textarea" rows="3"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-success" onclick="LifeOS.passwordsEn.savePassword()">
+                    <i class="fas fa-save"></i> Save Password
+                </button>
             </div>
         `;
-        
-        LifeOS.ui.showModal(formHtml);
-    },
-
-    handleAddPassword: function(event) {
-        event.preventDefault();
-        
-        const title = document.getElementById('passwordTitle').value.trim();
-        const username = document.getElementById('passwordUsername').value.trim();
-        const password = document.getElementById('passwordPassword').value;
-        const url = document.getElementById('passwordUrl').value.trim();
-        const category = document.getElementById('passwordCategory').value;
-        const notes = document.getElementById('passwordNotes').value.trim();
-        
-        if (!title || !username || !password) {
-            LifeOS.ui.showNotification('Please fill in all required fields', 'error');
-            return;
-        }
-        
-        const newPassword = {
-            id: 'pwd_' + Date.now(),
-            title,
-            username,
-            password,
-            url,
-            category,
-            notes,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-        };
-        
-        LifeOS.core.state.data.passwords.push(newPassword);
-        LifeOS.core.saveData();
-        
-        LifeOS.ui.hideModal();
-        LifeOS.ui.showNotification('Password saved successfully!', 'success');
-        
-        // Refresh the list
-        document.getElementById('passwordsList').innerHTML = this.renderPasswordsList();
-    },
-
-    copyUsername: function(id) {
-        const password = LifeOS.core.state.data.passwords.find(p => p.id === id);
-        if (password) {
-            navigator.clipboard.writeText(password.username).then(() => {
-                LifeOS.ui.showNotification('Username copied to clipboard!', 'success');
-            });
-        }
-    },
-
-    copyPassword: function(id) {
-        const password = LifeOS.core.state.data.passwords.find(p => p.id === id);
-        if (password) {
-            navigator.clipboard.writeText(password.password).then(() => {
-                LifeOS.ui.showNotification('Password copied to clipboard!', 'success');
-            });
-        }
-    },
-
-    togglePassword: function(id) {
-        const detailsDiv = document.getElementById(`password-${id}`);
-        const passwordValue = detailsDiv.querySelector('.password-value');
-        const password = LifeOS.core.state.data.passwords.find(p => p.id === id);
-        
-        if (detailsDiv.style.display === 'none') {
-            detailsDiv.style.display = 'block';
-            passwordValue.textContent = password.password;
-        } else {
-            detailsDiv.style.display = 'none';
-            passwordValue.textContent = '••••••••';
-        }
+        LifeOS.ui.showModal('Add New Password', form);
     },
 
     generatePassword: function() {
@@ -320,150 +191,211 @@ LifeOS.passwordsEn = {
         for (let i = 0; i < 16; i++) {
             password += chars.charAt(Math.floor(Math.random() * chars.length));
         }
-        document.getElementById('passwordPassword').value = password;
+        document.getElementById('add-password').value = password;
+        LifeOS.ui.showToast('Strong password generated!', 'success');
     },
 
-    toggleAddPasswordVisibility: function() {
-        const input = document.getElementById('passwordPassword');
-        const icon = event.target.closest('button').querySelector('i');
+    savePassword: function() {
+        const platform = document.getElementById('add-platform').value.trim();
+        const username = document.getElementById('add-username').value.trim();
+        const password = document.getElementById('add-password').value;
         
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.className = 'fas fa-eye-slash';
-        } else {
-            input.type = 'password';
-            icon.className = 'fas fa-eye';
+        if (!platform || !username || !password) {
+            LifeOS.ui.showToast('Please fill in all required fields', 'error');
+            return;
         }
+
+        const newPassword = {
+            id: Date.now(),
+            platform,
+            username,
+            email: document.getElementById('add-email').value.trim(),
+            password,
+            tags: document.getElementById('add-tags').value.split(',').map(t => t.trim()).filter(t => t),
+            notes: document.getElementById('add-notes').value.trim(),
+            createdAt: new Date().toISOString()
+        };
+
+        LifeOS.core.state.data.passwords.push(newPassword);
+        LifeOS.core.saveData();
+        this.renderGrid();
+        LifeOS.ui.closeModal();
+        LifeOS.ui.showToast('Password saved successfully!', 'success');
+    },
+
+    editPassword: function(item) {
+        const form = `
+            <div class="form-group">
+                <label class="form-label">Platform/Service Name</label>
+                <input type="text" id="edit-platform" class="form-input" value="${item.platform}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Username</label>
+                <input type="text" id="edit-username" class="form-input" value="${item.username}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" id="edit-email" class="form-input" value="${item.email || ''}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Password</label>
+                <div class="password-input">
+                    <input type="password" id="edit-password" class="form-input" value="${item.password}">
+                    <button type="button" class="btn btn-secondary" onclick="LifeOS.passwordsEn.generateEditPassword()">
+                        <i class="fas fa-magic"></i> Generate
+                    </button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tags</label>
+                <input type="text" id="edit-tags" class="form-input" value="${(item.tags || []).join(', ')}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea id="edit-notes" class="form-textarea" rows="3">${item.notes || ''}</textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-success" onclick="LifeOS.passwordsEn.updatePassword(${item.id})">
+                    <i class="fas fa-save"></i> Update Password
+                </button>
+            </div>
+        `;
+        LifeOS.ui.showModal('Edit Password', form);
+    },
+
+    generateEditPassword: function() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+        let password = '';
+        for (let i = 0; i < 16; i++) {
+            password += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        document.getElementById('edit-password').value = password;
+        LifeOS.ui.showToast('Strong password generated!', 'success');
+    },
+
+    updatePassword: function(id) {
+        const index = LifeOS.core.state.data.passwords.findIndex(p => p.id === id);
+        if (index === -1) return;
+
+        const platform = document.getElementById('edit-platform').value.trim();
+        const username = document.getElementById('edit-username').value.trim();
+        const password = document.getElementById('edit-password').value;
+        
+        if (!platform || !username || !password) {
+            LifeOS.ui.showToast('Please fill in all required fields', 'error');
+            return;
+        }
+
+        LifeOS.core.state.data.passwords[index] = {
+            ...LifeOS.core.state.data.passwords[index],
+            platform,
+            username,
+            email: document.getElementById('edit-email').value.trim(),
+            password,
+            tags: document.getElementById('edit-tags').value.split(',').map(t => t.trim()).filter(t => t),
+            notes: document.getElementById('edit-notes').value.trim(),
+            updatedAt: new Date().toISOString()
+        };
+
+        LifeOS.core.saveData();
+        this.renderGrid();
+        LifeOS.ui.closeModal();
+        LifeOS.ui.showToast('Password updated successfully!', 'success');
+    },
+
+    confirmDelete: function(item) {
+        const confirm = `
+            <div style="text-align: center;">
+                <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--danger-color); margin-bottom: 1rem;"></i>
+                <h3>Delete Password</h3>
+                <p>Are you sure you want to delete the password for <strong>${item.platform}</strong>?</p>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">This action cannot be undone.</p>
+                <div class="form-actions" style="margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="LifeOS.ui.closeModal()">Cancel</button>
+                    <button class="btn btn-danger" onclick="LifeOS.passwordsEn.deletePassword(${item.id})">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                </div>
+            </div>
+        `;
+        LifeOS.ui.showModal('Confirm Delete', confirm);
     },
 
     deletePassword: function(id) {
-        if (confirm('Are you sure you want to delete this password?')) {
-            LifeOS.core.state.data.passwords = LifeOS.core.state.data.passwords.filter(p => p.id !== id);
-            LifeOS.core.saveData();
-            LifeOS.ui.showNotification('Password deleted successfully!', 'success');
-            
-            // Refresh the list
-            document.getElementById('passwordsList').innerHTML = this.renderPasswordsList();
-        }
+        LifeOS.core.state.data.passwords = LifeOS.core.state.data.passwords.filter(p => p.id !== id);
+        LifeOS.core.saveData();
+        this.renderGrid();
+        LifeOS.ui.closeModal();
+        LifeOS.ui.showToast('Password deleted successfully!', 'success');
     },
 
-    editPassword: function(id) {
+    handleExternalImport: function(file) {
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target.result);
+                if (Array.isArray(data)) {
+                    const imported = data.map(item => ({
+                        ...item,
+                        id: Date.now() + Math.random(),
+                        importedAt: new Date().toISOString()
+                    }));
+                    LifeOS.core.state.data.passwords.push(...imported);
+                    LifeOS.core.saveData();
+                    this.renderGrid();
+                    LifeOS.ui.showToast(`Imported ${imported.length} passwords successfully!`, 'success');
+                }
+            } catch (error) {
+                LifeOS.ui.showToast('Invalid JSON file format', 'error');
+            }
+        };
+        reader.readAsText(file);
+    },
+
+    togglePassword: function(id, span, icon) {
         const password = LifeOS.core.state.data.passwords.find(p => p.id === id);
         if (!password) return;
         
-        const formHtml = `
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3><i class="fas fa-edit"></i> Edit Password</h3>
-                    <button class="modal-close" onclick="LifeOS.ui.hideModal()">&times;</button>
-                </div>
-                <form id="editPasswordForm" onsubmit="LifeOS.passwordsEn.handleEditPassword(event, '${id}')">
-                    <div class="form-group">
-                        <label for="editPasswordTitle">Title *</label>
-                        <input type="text" id="editPasswordTitle" required value="${password.title}">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPasswordUsername">Username/Email *</label>
-                        <input type="text" id="editPasswordUsername" required value="${password.username}">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPasswordPassword">Password *</label>
-                        <div class="password-input-group">
-                            <input type="password" id="editPasswordPassword" required value="${password.password}">
-                            <button type="button" class="btn-icon" onclick="LifeOS.passwordsEn.toggleEditPasswordVisibility()">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPasswordUrl">Website URL</label>
-                        <input type="url" id="editPasswordUrl" value="${password.url || ''}">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPasswordCategory">Category</label>
-                        <select id="editPasswordCategory">
-                            <option value="personal" ${password.category === 'personal' ? 'selected' : ''}>Personal</option>
-                            <option value="work" ${password.category === 'work' ? 'selected' : ''}>Work</option>
-                            <option value="banking" ${password.category === 'banking' ? 'selected' : ''}>Banking</option>
-                            <option value="social" ${password.category === 'social' ? 'selected' : ''}>Social</option>
-                            <option value="other" ${password.category === 'other' ? 'selected' : ''}>Other</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="editPasswordNotes">Notes</label>
-                        <textarea id="editPasswordNotes">${password.notes || ''}</textarea>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary" onclick="LifeOS.ui.hideModal()">Cancel</button>
-                        <button type="submit" class="btn-primary">
-                            <i class="fas fa-save"></i>
-                            Update Password
-                        </button>
-                    </div>
-                </form>
-            </div>
-        `;
-        
-        LifeOS.ui.showModal(formHtml);
-    },
-
-    handleEditPassword: function(event, id) {
-        event.preventDefault();
-        
-        const title = document.getElementById('editPasswordTitle').value.trim();
-        const username = document.getElementById('editPasswordUsername').value.trim();
-        const password = document.getElementById('editPasswordPassword').value;
-        const url = document.getElementById('editPasswordUrl').value.trim();
-        const category = document.getElementById('editPasswordCategory').value;
-        const notes = document.getElementById('editPasswordNotes').value.trim();
-        
-        if (!title || !username || !password) {
-            LifeOS.ui.showNotification('Please fill in all required fields', 'error');
-            return;
-        }
-        
-        const passwordIndex = LifeOS.core.state.data.passwords.findIndex(p => p.id === id);
-        if (passwordIndex !== -1) {
-            LifeOS.core.state.data.passwords[passwordIndex] = {
-                ...LifeOS.core.state.data.passwords[passwordIndex],
-                title,
-                username,
-                password,
-                url,
-                category,
-                notes,
-                updatedAt: new Date().toISOString()
-            };
-            
-            LifeOS.core.saveData();
-            LifeOS.ui.hideModal();
-            LifeOS.ui.showNotification('Password updated successfully!', 'success');
-            
-            // Refresh the list
-            document.getElementById('passwordsList').innerHTML = this.renderPasswordsList();
-        }
-    },
-
-    toggleEditPasswordVisibility: function() {
-        const input = document.getElementById('editPasswordPassword');
-        const icon = event.target.closest('button').querySelector('i');
-        
-        if (input.type === 'password') {
-            input.type = 'text';
+        if (span.textContent === '••••••••••') {
+            span.textContent = password.password;
+            span.style.fontFamily = 'monospace';
             icon.className = 'fas fa-eye-slash';
+            setTimeout(() => {
+                if (span.textContent === password.password) {
+                    span.textContent = '••••••••••';
+                    icon.className = 'fas fa-eye';
+                }
+            }, 3000);
         } else {
-            input.type = 'password';
+            span.textContent = '••••••••••';
             icon.className = 'fas fa-eye';
         }
     },
 
-    attachEventListeners: function() {
-        // Any additional event listeners can be added here
+    copyPassword: function(id) {
+        const password = LifeOS.core.state.data.passwords.find(p => p.id === id);
+        if (password) {
+            navigator.clipboard.writeText(password.password);
+            LifeOS.ui.showToast('Password copied!', 'success');
+        }
+    },
+
+    copyUsername: function(id) {
+        const password = LifeOS.core.state.data.passwords.find(p => p.id === id);
+        if (password) {
+            navigator.clipboard.writeText(password.username);
+            LifeOS.ui.showToast('Username copied!', 'success');
+        }
+    },
+
+    delete: function(id) {
+        if (confirm('Are you sure you want to delete this password?')) {
+            LifeOS.core.state.data.passwords = LifeOS.core.state.data.passwords.filter(p => p.id !== id);
+            LifeOS.core.saveData();
+            this.renderGrid();
+            LifeOS.ui.showToast('Password deleted successfully!', 'success');
+        }
     }
 };

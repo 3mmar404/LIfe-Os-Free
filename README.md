@@ -205,6 +205,8 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 **Made with ❤️ for digital privacy and security**
 
-[⭐ Star this project](https://github.com/yourusername/lifeos-free) • [🍴 Fork it](https://github.com/yourusername/lifeos-free/fork) • [📝 Contribute](CONTRIBUTING.md)
+[⭐ Star this project](https://github.com/3mmar404/lifeos-free) •
+ [🍴 Fork it](https://github.com/3mmar404/lifeos-free/fork) • 
+ [📝 Contribute](CONTRIBUTING.md)
 
 </div>
