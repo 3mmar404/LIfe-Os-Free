@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeOS Free</title>
+    <link rel="icon" type="image/x-icon" href="assests/icon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="assests/icon.ico">
+    
+    <!-- Google Fonts (Project Nightfall Update) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <a href="#" class="app-logo" onclick="location.reload();">
+                    <img src="assests/logo3.png" alt="LifeOS" style="height: 42px; width: auto;">
+                    <span>LifeOS</span>
+                </a>
+                <div class="header-actions">
+                    <button class="mobile-menu-btn" onclick="toggleMobileMenu()" title="القائمة">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <button class="theme-toggle" title="تبديل الثيم">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button class="settings-btn" title="الإعدادات/الأدوات">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                    <button class="lang-toggle" onclick="window.location.href='index-en.html'" title="English">
+                        <i class="fas fa-language"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="main-nav">
+            <div class="nav-container">
+                <div class="nav-tabs">
+                    <button class="nav-tab active" data-module="dashboard">
+                        <i class="fas fa-tachometer-alt"></i>
+                        الرئيسية
+                    </button>
+                    <button class="nav-tab" data-module="passwords">
+                        <i class="fas fa-key"></i>
+                        كلمات المرور
+                    </button>
+                    <button class="nav-tab" data-module="contacts">
+                        <i class="fas fa-address-book"></i>
+                        ملفات الاتصال
+                    </button>
+                    <button class="nav-tab" data-module="bookmarks">
+                        <i class="fas fa-bookmark"></i>
+                        المفضلة
+                    </button>
+                    <button class="nav-tab" data-module="tools">
+                        <i class="fas fa-tools"></i>
+                        الأدوات
+                    </button>
+                    <button class="nav-tab" data-module="about">
+                        <i class="fas fa-info-circle"></i>
+                        حول
+                    </button>
+                    <button class="nav-tab" data-module="documentation">
+                        <i class="fas fa-book"></i>
+                        دليل الاستخدام
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div id="dashboard" class="module active"></div>
+            <div id="passwords" class="module"></div>
+            <div id="contacts" class="module"></div>
+            <div id="bookmarks" class="module"></div>
+            <div id="tools" class="module"></div>
+            <div id="about" class="module"></div>
+            <div id="documentation" class="module"></div>
+        </main>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title"></h2>
+                <button class="modal-close" onclick="LifeOS.ui.closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body"></div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">
+        <div class="toast-message"></div>
+    </div>
+
+    <!-- JAVASCRIPT FILES (ORDER IS CRITICAL) -->
+    <script src="js/security.js"></script>
+    <script src="js/core.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/modules/dashboard.js"></script>
+    <script src="js/modules/passwords.js"></script>
+    <script src="js/modules/contacts.js"></script>
+    <script src="js/modules/bookmarks.js"></script>
+    <script src="js/modules/tools.js"></script>
+    <script src="js/modules/about.js"></script>
+    <script src="js/modules/documentation.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

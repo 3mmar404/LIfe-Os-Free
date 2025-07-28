@@ -1,0 +1,119 @@
+{
+  "name": "lifeos-free",
+  "version": "1.0.0",
+  "description": "🛡️ Secure Digital Life Management System - Free & Open Source password manager, contacts, and bookmarks with military-grade encryption",
+  "main": "index.html",
+  "scripts": {
+    "start": "echo '🚀 Open index.html in your browser to start LifeOS Free'",
+    "serve": "python -m http.server 8000 || python3 -m http.server 8000",
+    "test": "echo '✅ No tests specified - static HTML/CSS/JS application'",
+    "build": "echo '📦 No build process needed - ready-to-use static files'",
+    "validate": "echo '🔍 Validating HTML/CSS/JS files...' && echo 'Manual validation required'",
+    "deploy": "echo '🚀 Ready for deployment - upload files to web server'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/lifeos-free.git"
+  },
+  "keywords": [
+    "password-manager",
+    "digital-life-management",
+    "security",
+    "encryption",
+    "privacy",
+    "aes-256",
+    "pbkdf2",
+    "offline",
+    "local-storage",
+    "arabic",
+    "english",
+    "multilingual",
+    "free",
+    "open-source",
+    "javascript",
+    "html5",
+    "css3",
+    "web-crypto-api",
+    "responsive",
+    "mobile-friendly",
+    "dark-theme",
+    "light-theme",
+    "contacts-manager",
+    "bookmarks-manager",
+    "data-export",
+    "data-import",
+    "zero-tracking",
+    "no-servers",
+    "client-side"
+  ],
+  "author": {
+    "name": "LifeOS Team",
+    "email": "contact@lifeos.dev",
+    "url": "https://lifeos.dev"
+  },
+  "contributors": [
+    {
+      "name": "Community Contributors",
+      "url": "https://github.com/username/lifeos-free/graphs/contributors"
+    }
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/username/lifeos-free/issues",
+    "email": "bugs@lifeos.dev"
+  },
+  "homepage": "https://github.com/username/lifeos-free#readme",
+  "funding": {
+    "type": "individual",
+    "url": "https://github.com/sponsors/username"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead",
+    "not ie 11",
+    "Chrome >= 60",
+    "Firefox >= 55",
+    "Safari >= 11",
+    "Edge >= 79"
+  ],
+  "files": [
+    "index.html",
+    "index-en.html",
+    "css/",
+    "js/",
+    "README.md",
+    "README-AR.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "FEATURES.md"
+  ],
+  "directories": {
+    "doc": "docs",
+    "example": "examples"
+  },
+  "config": {
+    "app_name": "LifeOS Free",
+    "app_version": "1.0.0",
+    "supported_languages": ["ar", "en"],
+    "encryption": "AES-256",
+    "key_derivation": "PBKDF2"
+  },
+  "devDependencies": {},
+  "dependencies": {},
+  "peerDependencies": {},
+  "optionalDependencies": {},
+  "os": [
+    "win32",
+    "darwin",
+    "linux"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ]
+}
