@@ -15,6 +15,41 @@ LifeOS.ui = {
                 this.closeModal();
             }
         });
+        
+        // Mobile keyboard handling
+        this.initMobileKeyboardSupport();
+    },
+
+    initMobileKeyboardSupport: function() {
+        let viewportHeight = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            const currentHeight = window.innerHeight;
+            const heightDiff = viewportHeight - currentHeight;
+            
+            // Keyboard likely opened if height decreased significantly
+            if (heightDiff > 150) {
+                document.body.classList.add('keyboard-open');
+                // Scroll active input into view
+                const activeElement = document.activeElement;
+                if (activeElement && activeElement.tagName === 'INPUT') {
+                    setTimeout(() => {
+                        activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 300);
+                }
+            } else {
+                document.body.classList.remove('keyboard-open');
+            }
+        });
+        
+        // Handle input focus for mobile
+        document.addEventListener('focusin', (e) => {
+            if (e.target.matches('input, textarea')) {
+                setTimeout(() => {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 300);
+            }
+        });
     },
     
     showModal: function(title, content) {
@@ -138,8 +173,36 @@ LifeOS.ui = {
 // Global functions for mobile menu and filters
 function toggleMobileMenu() {
     const nav = document.querySelector('.main-nav');
+    const btn = document.querySelector('.mobile-menu-btn');
     nav.classList.toggle('mobile-open');
+    btn.classList.toggle('active');
 }
+
+// Auto-close mobile menu when nav tab is clicked or clicked outside
+document.addEventListener('DOMContentLoaded', function() {
+    const nav = document.querySelector('.main-nav');
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    
+    // Close when nav tab clicked
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.addEventListener('click', function() {
+            if (nav.classList.contains('mobile-open')) {
+                nav.classList.remove('mobile-open');
+                mobileMenuBtn.classList.remove('active');
+            }
+        });
+    });
+    
+    // Close when clicking outside menu
+    document.addEventListener('click', function(e) {
+        if (nav.classList.contains('mobile-open') && 
+            !nav.contains(e.target) && 
+            !mobileMenuBtn.contains(e.target)) {
+            nav.classList.remove('mobile-open');
+            mobileMenuBtn.classList.remove('active');
+        }
+    });
+});
 
 function toggleFilters() {
     const content = document.querySelector('#passwords .filters-content');
